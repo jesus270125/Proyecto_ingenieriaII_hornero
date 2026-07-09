@@ -15,6 +15,13 @@ class Venta extends Model
     protected $fillable = [
         'fecha',
         'monto',
+        'metodo_pago', // Se añade para registrar cómo pagaron la venta base
+    ];
+    
+ public function propina()
+    {
+        return $this->hasOne(Propina::class, 'venta_id');
+    }   
         'metodo_pago',
     ];
 
