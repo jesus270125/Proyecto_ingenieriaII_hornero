@@ -146,7 +146,7 @@ class FidelizacionController extends Controller
         $fechaInicio = $caja->fecha_apertura;
         $fechaFin = $caja->fecha_cierre ?? now();
 
-        $totalVentas = Venta::whereBetween('created_at', [$fechaInicio, $fechaFin])->sum('monto');
+        $totalVentas = Venta::whereBetween('fecha', [$fechaInicio, $fechaFin])->sum('monto');
         $totalPropinas = Propina::whereBetween('created_at', [$fechaInicio, $fechaFin])->sum('monto');
 
         $propinasPorMesero = Propina::whereBetween('propinas.created_at', [$fechaInicio, $fechaFin])
