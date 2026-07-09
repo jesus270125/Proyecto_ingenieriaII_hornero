@@ -8,6 +8,7 @@ use App\Http\Controllers\CajaController;
 use App\Http\Controllers\ReciboController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\InventarioController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -53,4 +54,29 @@ Route::prefix('admin')->group(function () {
     Route::post('/usuarios', [AdminController::class, 'crearUsuario']);
     Route::put('/usuarios/{id}', [AdminController::class, 'actualizarUsuario']);
     Route::delete('/usuarios/{id}', [AdminController::class, 'eliminarUsuario']);
+});
+
+// ================================================================
+// MÓDULO DE GESTIÓN DE INVENTARIOS (RF31 - RF34)
+// ================================================================
+Route::prefix('inventario')->group(function () {
+    // RF31: CRUD de Insumos
+    Route::get('/insumos', [InventarioController::class, 'indexInsumos']);
+    Route::post('/insumos', [InventarioController::class, 'storeInsumo']);
+    Route::put('/insumos/{id}', [InventarioController::class, 'updateInsumo']);
+    Route::delete('/insumos/{id}', [InventarioController::class, 'destroyInsumo']);
+    Route::get('/categorias', [InventarioController::class, 'categorias']);
+
+    // RF32: Entradas de Mercadería
+    Route::get('/entradas', [InventarioController::class, 'indexEntradas']);
+    Route::post('/entradas', [InventarioController::class, 'storeEntrada']);
+
+    // RF33: Recetas y Descuento de Stock
+    Route::get('/recetas/{menuId}', [InventarioController::class, 'getReceta']);
+    Route::post('/recetas', [InventarioController::class, 'storeReceta']);
+    Route::post('/descontar/{ventaId}', [InventarioController::class, 'descontarStock']);
+
+    // RF34: Alertas y Estadísticas
+    Route::get('/alertas', [InventarioController::class, 'alertas']);
+    Route::get('/stats', [InventarioController::class, 'dashboardStats']);
 });

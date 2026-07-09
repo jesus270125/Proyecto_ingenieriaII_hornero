@@ -22,4 +22,22 @@ class Venta extends Model
     {
         return $this->hasOne(Propina::class, 'venta_id');
     }   
+        'metodo_pago',
+    ];
+
+    /**
+     * Pedidos asociados a esta venta.
+     */
+    public function pedidos()
+    {
+        return $this->hasMany(Pedido::class, 'venta_id');
+    }
+
+    /**
+     * Detalle de productos vendidos.
+     */
+    public function detalles()
+    {
+        return $this->hasMany(VentaDetalle::class, 'venta_id');
+    }
 }

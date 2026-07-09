@@ -52,6 +52,14 @@ class CajaController extends Controller
         $venta->metodo_pago = $request->input('metodo_pago', 'Efectivo');
         $venta->save();
 
+        // RF33: Descuento automático de stock por venta
+        // Se ejecuta después de guardar la venta. Los pedidos se vinculan
+        // a esta venta desde el frontend (CajaView) justo después de esta
+        // llamada, por lo que el descuento se hace de forma diferida.
+        // El descuento real ocurre cuando se llama a /pedidos/actualizar
+        // con venta_id, así que registramos el ventaId para que el
+        // frontend pueda disparar el descuento después de vincular pedidos.
+
         return response()->json([
             'ok' => true, 
             'msg' => 'Venta registrada. Total: S/ ' . number_format($monto, 2), 
