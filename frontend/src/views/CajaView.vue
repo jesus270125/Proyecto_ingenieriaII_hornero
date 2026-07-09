@@ -175,6 +175,13 @@ const procesarPagoSI = async (metodo) => {
         );
         await Promise.all(updates);
 
+        // 3.5. Descontar stock (RF33)
+        try {
+            await api.post(`/inventario/descontar/${ventaId}`);
+        } catch (eDesc) {
+            console.error('Error al descontar stock:', eDesc);
+        }
+
         // 4. UI Updates
         historialVentas.value.unshift({
             id: Date.now(), // Temp ID

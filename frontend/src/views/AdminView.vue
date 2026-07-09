@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../api';
+import InventarioPanel from '../components/InventarioPanel.vue';
 import { Line, Bar } from 'vue-chartjs';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
 
@@ -56,6 +57,23 @@ const imgFallback = (e) => {
   e.target.src = '/logo.png';
 };
 
+// RF34: Estado para alertas de inventario en el Dashboard
+const invStats = ref({ total_insumos: 0, stock_bajo: 0, agotados: 0, entradas_hoy: 0 });
+const invAlertas = ref([]);
+
+const loadInvStats = async () => {
+  try {
+    const r = await api.get('/inventario/stats');
+    invStats.value = r.data;
+  } catch (e) { console.error(e); }
+};
+const loadInvAlertas = async () => {
+  try {
+    const r = await api.get('/inventario/alertas');
+    invAlertas.value = r.data;
+  } catch (e) { console.error(e); }
+};
+
 onMounted(() => {
   const rol = localStorage.getItem('rol');
   if (rol !== 'admin') {
@@ -69,6 +87,8 @@ onMounted(() => {
     loadPedidosDiarios();
     loadPedidosMensuales();
     loadPedidosAnuales();
+    loadInvStats();
+    loadInvAlertas();
   }
 });
 
@@ -167,6 +187,8 @@ const setTab = async (t) => {
     loadPedidosDiarios();
     loadPedidosMensuales();
     loadPedidosAnuales();
+    loadInvStats();
+    loadInvAlertas();
   }
   if (t === 'usuarios') loadUsuarios();
   if (t === 'pedidos') loadPedidos();
@@ -179,6 +201,7 @@ const setTab = async (t) => {
     await loadCajaConfig();
     await loadCierreAdmin();
   }
+  // Tab inventario: el componente InventarioPanel maneja su propia carga
 };
 const submitMenu = async () => {
   try {
@@ -412,6 +435,10 @@ const exportCierreAdminPDF = () => {
         <button :class="['tab-btn', activeTab==='usuarios'?'active':'']" @click="setTab('usuarios')">Usuarios</button>
         <button :class="['tab-btn', activeTab==='reportes'?'active':'']" @click="setTab('reportes')">Reportes</button>
         <button :class="['tab-btn', activeTab==='caja_control'?'active':'']" @click="setTab('caja_control')">Control de Caja</button>
+        <button :class="['tab-btn', activeTab==='inventario'?'active':'', invStats.stock_bajo > 0 ? 'tab-alert' : '']" @click="setTab('inventario')">
+          📦 Inventario
+          <span v-if="invStats.stock_bajo > 0" class="tab-alert-badge">{{ invStats.stock_bajo }}</span>
+        </button>
       </div>
 
       <section v-if="activeTab==='dashboard' && loaded.stats" class="dashboard-stats">
@@ -431,7 +458,40 @@ const exportCierreAdminPDF = () => {
           <div class="stat-value">{{ stats.pedidosPendientes }}</div>
           <div class="stat-label">Pedidos Pendientes</div>
         </div>
+        <!-- RF34: Cards de inventario en el Dashboard -->
+        <div class="stat-card" v-if="invStats.total_insumos > 0" style="border-top-color: #4caf50;">
+          <div class="stat-value" style="color: #4caf50;">{{ invStats.total_insumos }}</div>
+          <div class="stat-label">Insumos Activos</div>
+        </div>
+        <div class="stat-card" v-if="invStats.stock_bajo > 0" style="border-top-color: #e53935;">
+          <div class="stat-value" style="color: #e53935;">{{ invStats.stock_bajo }}</div>
+          <div class="stat-label">⚠️ Stock Bajo</div>
+        </div>
       </section>
+
+      <!-- RF34: Alertas de inventario en el Dashboard -->
+      <section v-if="activeTab==='dashboard' && invAlertas.length > 0" class="content-section" style="border-left: 4px solid #e53935;">
+        <h2 class="section-title" style="color: #e53935; border-bottom-color: #ffcdd2;">⚠️ Insumos con Stock Bajo</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px;">
+          <div v-for="a in invAlertas.slice(0, 6)" :key="a.id" style="padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;"
+               :style="{ background: a.nivel === 'agotado' ? '#ffebee' : a.nivel === 'critico' ? '#fff3e0' : '#fff8e1' }">
+            <div>
+              <div style="font-weight: 700; color: #333;">{{ a.nombre }}</div>
+              <div style="font-size: 0.8rem; color: #888;">{{ a.categoria }}</div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-weight: 700;" :style="{ color: a.nivel === 'agotado' ? '#c62828' : a.nivel === 'critico' ? '#e65100' : '#f9a825' }">
+                {{ Number(a.stock_actual).toFixed(1) }} {{ a.unidad_medida }}
+              </div>
+              <div style="font-size: 0.7rem; color: #999;">Mín: {{ Number(a.stock_minimo).toFixed(1) }}</div>
+            </div>
+          </div>
+        </div>
+        <div v-if="invAlertas.length > 6" style="text-align: center; margin-top: 10px;">
+          <button class="btn btn-primary" style="font-size: 0.85rem;" @click="setTab('inventario')">Ver todos ({{ invAlertas.length }})</button>
+        </div>
+      </section>
+
       <div v-if="activeTab==='dashboard' && !loaded.stats" class="loading">Cargando...</div>
 
       <section v-if="activeTab==='menu'" class="content-section" style="padding: 20px 50px;">
@@ -820,6 +880,11 @@ const exportCierreAdminPDF = () => {
           </table>
         </div>
       </section>
+
+      <!-- RF31-RF34: Módulo de Inventarios -->
+      <section v-if="activeTab==='inventario'" class="content-section" style="padding: 20px;">
+        <InventarioPanel />
+      </section>
     </main>
   </div>
   </template>
@@ -907,6 +972,25 @@ const exportCierreAdminPDF = () => {
   border-color: #ffcc80;
   color: #f1af32;
   background: #fff9f0;
+}
+.tab-btn.tab-alert {
+  position: relative;
+}
+.tab-alert-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #e53935;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 .dashboard-stats {
   display: grid;

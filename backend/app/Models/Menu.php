@@ -19,4 +19,13 @@ class Menu extends Model
         'imagen',
         'categoria',
     ];
+
+    /**
+     * RF33: Insumos que componen la receta de este producto.
+     */
+    public function insumos()
+    {
+        return $this->belongsToMany(Insumo::class, 'menu_insumo', 'menu_id', 'insumo_id')
+                    ->withPivot('cantidad_requerida');
+    }
 }
