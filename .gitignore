@@ -47,3 +47,7 @@ coverage/
 # Logs
 logs/
 *.log
+
+# Archivos de planificacion
+implementation_plan.md
+spec_RF31-RF34_inventarios.txt
