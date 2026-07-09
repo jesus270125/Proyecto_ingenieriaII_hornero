@@ -13,6 +13,12 @@ return new class extends Migration
     {
         Schema::create('clientes', function (Blueprint $table) {
             $table->id();
+            $table->string('num_documento', 11)->unique(); // Para DNI (8 dígitos) o RUC (11 dígitos)
+            $table->string('nombre');
+            $table->string('telefono')->nullable();
+            $table->string('email')->nullable();
+            $table->text('preferencias')->nullable(); // RF38: Historial y Preferencias (Ej: "Prefiere parte pecho")
+            $table->integer('puntos_fidelidad')->default(0); // Para estrategias de fidelización
             $table->timestamps();
         });
     }
