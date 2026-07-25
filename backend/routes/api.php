@@ -80,3 +80,10 @@ Route::prefix('inventario')->group(function () {
     Route::get('/alertas', [InventarioController::class, 'alertas']);
     Route::get('/stats', [InventarioController::class, 'dashboardStats']);
 });
+
+// Módulo de propinas y fidelidad
+Route::prefix('propinas')->group(function () {
+    Route::get('/', [\App\Http\Controllers\PropinaController::class, 'index']);
+    Route::post('/', [\App\Http\Controllers\PropinaController::class, 'store']);
+    Route::get('/reporte', [\App\Http\Controllers\PropinaController::class, 'reporte']);
+});

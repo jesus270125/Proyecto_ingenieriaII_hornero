@@ -199,10 +199,43 @@ INSERT INTO menu_insumo (menu_id, insumo_id, cantidad_requerida) VALUES
 (3, 4, 0.005),
 (3, 14, 0.150);
 
--- Recetas: Octavo de pollo / Monstrito (menu_id=4)
 INSERT INTO menu_insumo (menu_id, insumo_id, cantidad_requerida) VALUES
 (4, 1, 0.150),
 (4, 2, 0.200),
 (4, 3, 0.050),
 (4, 4, 0.003),
 (4, 14, 0.100);
+
+-- ====================================================================
+-- MÓDULO DE PROPINAS Y FIDELIZACIÓN (RF39 - RF40 - RF38)
+-- ====================================================================
+
+CREATE TABLE propinas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    venta_id INT NULL,
+    monto DECIMAL(8,2) NOT NULL DEFAULT 0,
+    metodo_pago VARCHAR(50) NULL,
+    usuario_id INT NULL,
+    referencia VARCHAR(255) NULL,
+    fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (venta_id) REFERENCES venta(id)
+);
+
+CREATE TABLE puntos_fidelidad (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    cliente_id INT NULL,
+    puntos INT DEFAULT 0,
+    acumulado_total INT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Datos de ejemplo
+INSERT INTO propinas (venta_id, monto, metodo_pago, usuario_id, referencia) VALUES
+(1, 5.00, 'Yape', 4, 'YP12345'),
+(2, 3.00, 'Tarjeta', 4, 'TX98765');
+
+INSERT INTO puntos_fidelidad (cliente_id, puntos, acumulado_total) VALUES
+(NULL, 120, 120);
