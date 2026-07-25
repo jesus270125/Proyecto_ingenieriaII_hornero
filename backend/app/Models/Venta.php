@@ -11,19 +11,22 @@ class Venta extends Model
 
     protected $table = 'venta';
     public $timestamps = false;
-
     protected $fillable = [
         'fecha',
         'monto',
-        'metodo_pago', // Se añade para registrar cómo pagaron la venta base
+        'metodo_pago',
+        'cliente_id',
     ];
-    
- public function propina()
+
+    public function propina()
     {
         return $this->hasOne(Propina::class, 'venta_id');
-    }   
-        'metodo_pago',
-    ];
+    }
+
+    public function cliente()
+    {
+        return $this->belongsTo(Cliente::class, 'cliente_id');
+    }
 
     /**
      * Pedidos asociados a esta venta.

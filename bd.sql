@@ -34,7 +34,8 @@ CREATE TABLE venta (
     id INT AUTO_INCREMENT PRIMARY KEY,
     fecha DATE NOT NULL,
     monto DECIMAL(8,2) NOT NULL,
-    metodo_pago ENUM('Efectivo', 'Tarjeta', 'Yape') DEFAULT 'Efectivo'
+    metodo_pago ENUM('Efectivo', 'Tarjeta', 'Yape') DEFAULT 'Efectivo',
+    cliente_id INT NULL
 );
 
 CREATE TABLE pedido (

@@ -50,7 +50,29 @@ class CajaController extends Controller
         $venta->fecha = now()->toDateString();
         $venta->monto = $monto;
         $venta->metodo_pago = $request->input('metodo_pago', 'Efectivo');
+        $venta->cliente_id = $request->input('cliente_id');
         $venta->save();
+
+        // Actualizar puntos de fidelidad si la venta está asociada a un cliente
+        if ($venta->cliente_id) {
+            // 1 punto por unidad monetaria completa (ejemplo)
+            $puntos = (int) floor($venta->monto);
+            if ($puntos > 0) {
+                // Usamos modelo PuntosFidelidad
+                $pf = \App\Models\PuntosFidelidad::where('cliente_id', $venta->cliente_id)->first();
+                if ($pf) {
+                    $pf->puntos += $puntos;
+                    $pf->acumulado_total += $puntos;
+                    $pf->save();
+                } else {
+                    \App\Models\PuntosFidelidad::create([
+                        'cliente_id' => $venta->cliente_id,
+                        'puntos' => $puntos,
+                        'acumulado_total' => $puntos,
+                    ]);
+                }
+            }
+        }
 
         // RF33: Descuento automático de stock por venta
         // Se ejecuta después de guardar la venta. Los pedidos se vinculan

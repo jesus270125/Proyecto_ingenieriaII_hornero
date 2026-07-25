@@ -46,6 +46,37 @@ class AdminController extends Controller
 
     public function clientes()
     {
+        $request = request();
+
+        if ($request->filled('search')) {
+            $q = $request->input('search');
+            $clientes = \App\Models\Cliente::where('nombre', 'like', "%$q%")
+                ->orWhere('apellidos', 'like', "%$q%")
+                ->orWhere('telefono', 'like', "%$q%")
+                ->get()
+                ->map(function ($c) {
+                    // obtener puntos desde la tabla puntos_fidelidad si existe
+                    $pf = \App\Models\PuntosFidelidad::where('cliente_id', $c->id)->first();
+                    $puntos = $pf ? (int)$pf->puntos : ((int)($c->puntos_fidelidad ?? 0));
+
+                    // últimos 5 consumos (ventas)
+                    $ventas = \App\Models\Venta::where('cliente_id', $c->id)->orderBy('fecha', 'desc')->limit(5)->get()->map(function ($v) {
+                        return ['id' => (int)$v->id, 'fecha' => (string)$v->fecha, 'monto' => (float)$v->monto];
+                    });
+
+                    return [
+                        'id' => (int)$c->id,
+                        'nombre' => (string) ($c->nombre ?? ''),
+                        'apellidos' => (string) ($c->apellidos ?? ''),
+                        'telefono' => (string) ($c->telefono ?? ''),
+                        'preferencias' => $c->preferencias ?? null,
+                        'puntos' => $puntos,
+                        'ventas_recientes' => $ventas,
+                    ];
+                });
+            return response()->json($clientes);
+        }
+
         $usuarios = Usuario::orderBy('id')->get()->map(function ($u) {
             return [
                 'id' => (int) $u->id,

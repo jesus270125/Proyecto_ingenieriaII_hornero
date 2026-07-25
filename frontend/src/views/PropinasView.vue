@@ -5,6 +5,7 @@ const ventaId = ref('')
 const monto = ref(0)
 const metodo = ref('Yape')
 const usuarioId = ref('')
+const clienteId = ref('')
 const status = ref('')
 
 async function submit() {
@@ -13,7 +14,7 @@ async function submit() {
     const res = await fetch('/api/propinas', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ venta_id: ventaId.value || null, monto: parseFloat(monto.value), metodo_pago: metodo.value, usuario_id: usuarioId.value || null })
+      body: JSON.stringify({ venta_id: ventaId.value || null, monto: parseFloat(monto.value), metodo_pago: metodo.value, usuario_id: usuarioId.value || null, cliente_id: clienteId.value || null })
     })
     if (!res.ok) throw new Error('Error')
     status.value = 'Propina registrada'
@@ -28,6 +29,9 @@ async function submit() {
     <h2>Registrar Propina</h2>
     <div>
       <label>Venta ID: <input v-model="ventaId" /></label>
+    </div>
+    <div>
+      <label>Cliente ID: <input v-model="clienteId" /></label>
     </div>
     <div>
       <label>Monto: <input type="number" v-model="monto" /></label>

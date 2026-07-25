@@ -31,7 +31,13 @@ async function buscar() {
       <h3>Resultados</h3>
       <ul>
         <li v-for="c in resultados" :key="c.id">
-          <strong>{{ c.nombre }}</strong> — puntos: {{ c.puntos_fidelidad }}
+          <strong>{{ c.nombre }} {{ c.apellidos }}</strong> — puntos: {{ c.puntos }}
+          <div v-if="c.ventas_recientes && c.ventas_recientes.length">
+            <small>Últimos consumos:</small>
+            <ul>
+              <li v-for="v in c.ventas_recientes" :key="v.id">{{ v.fecha }} — S/ {{ v.monto }}</li>
+            </ul>
+          </div>
         </li>
       </ul>
     </div>
