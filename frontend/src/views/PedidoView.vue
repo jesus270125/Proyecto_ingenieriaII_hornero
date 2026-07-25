@@ -7,6 +7,9 @@ const router = useRouter();
 const pedidos = ref([]);
 const mesas = Array.from({ length: 10 }, (_, i) => i + 1); // 20 mesas simuladas
 const mesaSeleccionada = ref('');
+const clienteQuery = ref('');
+const clienteResultados = ref([]);
+const clienteSeleccionado = ref(null);
 const menu = ref([]);
 const platoSeleccionado = ref('');
 const cantidad = ref(1);
@@ -37,6 +40,8 @@ onMounted(async () => {
   
   await fetchMenu();
   fetchPedidos();
+  // inicializar cliente vacío
+  clienteSeleccionado.value = null;
   // Polling para mantener estado de mesas actualizado
   setInterval(fetchPedidos, 5000);
 });
@@ -70,6 +75,16 @@ const agregarTarjeta = () => {
     // Reset inputs
     platoSeleccionado.value = '';
     cantidad.value = 1;
+  }
+};
+
+const buscarCliente = async () => {
+  if (!clienteQuery.value) { clienteResultados.value = []; return; }
+  try {
+    const res = await api.get(`/admin/clientes?search=${encodeURIComponent(clienteQuery.value)}`);
+    clienteResultados.value = res.data;
+  } catch (e) {
+    console.error('Error buscando clientes', e);
   }
 };
 
@@ -138,10 +153,12 @@ const crearPedido = async () => {
       mesa: mesaSeleccionada.value,
       detalle: detalleStr,
       usuario_id: Number(localStorage.getItem('userId')) || undefined,
+      cliente_id: clienteSeleccionado.value ? clienteSeleccionado.value.id : undefined,
       tipo_servicio: tipoServicio.value
     });
 
     if (response.data.success) {
+      clienteSeleccionado.value = null;
       mesaSeleccionada.value = '';
       carrito.value = [];
       ajustePrecio.value = null;
@@ -191,6 +208,25 @@ const logout = () => {
   localStorage.clear();
   router.push('/login');
 };
+
+const cobrarPedido = async (pedido) => {
+  try {
+    const ok = confirm(`Registrar venta y cobrar pedido ${pedido.id} (Mesa ${pedido.mesa})?`);
+    if (!ok) return;
+    const monto = Number(pedido.costo || 0);
+    const clienteId = pedido.cliente_id || (clienteSeleccionado.value ? clienteSeleccionado.value.id : null);
+    const res = await api.post('/caja/venta-from-pedido', { pedido_id: pedido.id, monto, metodo_pago: 'Efectivo', cliente_id: clienteId });
+    if (res.data.ok) {
+      alert('Venta registrada. ID: ' + res.data.ventaId);
+      fetchPedidos();
+    } else {
+      alert('Error al registrar venta');
+    }
+  } catch (e) {
+    console.error(e);
+    alert('Error al cobrar pedido');
+  }
+};
 </script>
 
 <template>
@@ -238,6 +274,21 @@ const logout = () => {
                 >
                   {{ m }}
                 </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Cliente (búsqueda rápida)</label>
+              <div style="display:flex; gap:8px; align-items:center">
+                <input v-model="clienteQuery" placeholder="Nombre, apellido o teléfono" @input="buscarCliente" style="flex:1" />
+                <div style="min-width:160px">
+                  <select v-if="clienteResultados.length" v-model="clienteSeleccionado">
+                    <option v-for="c in clienteResultados" :key="c.id" :value="c">{{ c.nombre }} {{ c.apellidos }} — Pts: {{ c.puntos }}</option>
+                  </select>
+                </div>
+              </div>
+              <div v-if="clienteSeleccionado" style="margin-top:6px; font-size:0.9em; color:#374151">
+                Seleccionado: <strong>{{ clienteSeleccionado.nombre }} {{ clienteSeleccionado.apellidos }}</strong> — Puntos: {{ clienteSeleccionado.puntos }}
               </div>
             </div>
             
@@ -373,7 +424,8 @@ const logout = () => {
                     <span class="status-pill">
                         {{ p.estado === 'pedido' ? 'En Cocina' : (p.estado === 'preparado' ? '¡LISTO!' : p.estado.toUpperCase()) }}
                     </span>
-                    <button class="btn-cancel" @click="cancelarPedido(p)" :disabled="String(p.estado).toLowerCase() !== 'pedido'">Cancelar</button>
+                  <button class="btn-cancel" @click="cancelarPedido(p)" :disabled="String(p.estado).toLowerCase() !== 'pedido'">Cancelar</button>
+                  <button class="btn-pay" @click="cobrarPedido(p)" :disabled="String(p.estado).toLowerCase() !== 'preparado' && String(p.estado).toLowerCase() !== 'pedido'" style="margin-left:8px">Cobrar</button>
                 </div>
              </div>
          </div>

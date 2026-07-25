@@ -25,6 +25,7 @@ Route::prefix('caja')->group(function () {
     Route::post('/cerrar', [CajaController::class, 'cerrar']);
     Route::get('/estado', [CajaController::class, 'estado']);
     Route::post('/venta', [CajaController::class, 'registrarVenta']);
+    Route::post('/venta-from-pedido', [CajaController::class, 'registrarVentaFromPedido']);
     Route::post('/recibo', [ReciboController::class, 'generar']);
     Route::post('/sunat', [ReciboController::class, 'enviarSunat']);
 });

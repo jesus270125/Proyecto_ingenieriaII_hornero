@@ -50,12 +50,16 @@ class PedidoController extends Controller
         $request->validate([
             'mesa' => 'required|integer',
             'detalle' => 'required|string',
+            'cliente_id' => 'nullable|integer',
             'usuario_id' => 'required|integer',
             'tipo_servicio' => 'nullable|string|in:local,llevar',
         ]);
 
         $pedido = new Pedido();
         $pedido->mesa = $request->mesa;
+        if ($request->filled('cliente_id')) {
+            $pedido->cliente_id = $request->cliente_id;
+        }
         $pedido->usuario_id = $request->usuario_id;
         $pedido->detalle = $request->detalle;
         $pedido->tipo_servicio = $request->input('tipo_servicio', 'local');

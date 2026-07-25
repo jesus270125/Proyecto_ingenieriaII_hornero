@@ -89,6 +89,52 @@ class CajaController extends Controller
         ]);
     }
 
+    public function registrarVentaFromPedido(Request $request)
+    {
+        $request->validate([
+            'pedido_id' => 'required|integer|exists:pedido,id',
+            'metodo_pago' => 'nullable|string',
+            'cliente_id' => 'nullable|integer',
+            'monto' => 'required|numeric|min:0',
+        ]);
+
+        $pedido = \App\Models\Pedido::find($request->pedido_id);
+        if (!$pedido) return response()->json(['error' => 'Pedido no encontrado'], 404);
+
+        $venta = new Venta();
+        $venta->fecha = now()->toDateString();
+        $venta->monto = $request->monto;
+        $venta->metodo_pago = $request->input('metodo_pago', 'Efectivo');
+        $venta->cliente_id = $request->input('cliente_id', $pedido->cliente_id ?? null);
+        $venta->save();
+
+        // link pedido -> venta
+        $pedido->venta_id = $venta->id;
+        $pedido->estado = 'pagado';
+        $pedido->save();
+
+        // actualizar puntos (misma lógica que registrarVenta)
+        if ($venta->cliente_id) {
+            $puntos = (int) floor($venta->monto);
+            if ($puntos > 0) {
+                $pf = \App\Models\PuntosFidelidad::where('cliente_id', $venta->cliente_id)->first();
+                if ($pf) {
+                    $pf->puntos += $puntos;
+                    $pf->acumulado_total += $puntos;
+                    $pf->save();
+                } else {
+                    \App\Models\PuntosFidelidad::create([
+                        'cliente_id' => $venta->cliente_id,
+                        'puntos' => $puntos,
+                        'acumulado_total' => $puntos,
+                    ]);
+                }
+            }
+        }
+
+        return response()->json(['ok' => true, 'ventaId' => $venta->id]);
+    }
+
     public function cerrar()
     {
         $caja = Caja::where('estado', 'ABIERTA')->orderBy('id', 'desc')->first();

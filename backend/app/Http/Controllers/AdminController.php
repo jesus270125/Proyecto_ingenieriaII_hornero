@@ -72,6 +72,7 @@ class AdminController extends Controller
                         'preferencias' => $c->preferencias ?? null,
                         'puntos' => $puntos,
                         'ventas_recientes' => $ventas,
+                        'promociones' => $this->calcularPromociones($puntos),
                     ];
                 });
             return response()->json($clientes);
@@ -87,6 +88,19 @@ class AdminController extends Controller
             ];
         });
         return response()->json($usuarios);
+    }
+
+    private function calcularPromociones(int $puntos): array
+    {
+        $prom = [];
+        if ($puntos >= 200) {
+            $prom[] = ['titulo' => '15% descuento', 'descripcion' => 'Descuento por fidelidad (>=200 puntos)'];
+        } elseif ($puntos >= 100) {
+            $prom[] = ['titulo' => '10% descuento', 'descripcion' => 'Descuento por fidelidad (>=100 puntos)'];
+        } elseif ($puntos >= 50) {
+            $prom[] = ['titulo' => '1 bebida gratis', 'descripcion' => 'Bebida gratuita por acumulado (>=50 puntos)'];
+        }
+        return $prom;
     }
     
     public function crearUsuario(Request $request)
