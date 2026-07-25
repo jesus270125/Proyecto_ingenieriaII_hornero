@@ -12,6 +12,20 @@ CREATE TABLE usuarios (
     tipo ENUM('admin','cocina','pedido','caja') NOT NULL
 );
 
+-- Tabla clientes (para fidelización y búsquedas)
+CREATE TABLE clientes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    num_documento VARCHAR(50) DEFAULT NULL,
+    nombre VARCHAR(150) NOT NULL,
+    apellidos VARCHAR(150) DEFAULT NULL,
+    telefono VARCHAR(50) DEFAULT NULL,
+    email VARCHAR(150) DEFAULT NULL,
+    preferencias TEXT DEFAULT NULL,
+    puntos_fidelidad INT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
 CREATE TABLE menu (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
@@ -38,17 +52,23 @@ CREATE TABLE venta (
     cliente_id INT NULL
 );
 
+-- Asegurar integridad referencial: cliente asociado a venta
+ALTER TABLE venta
+    ADD CONSTRAINT fk_venta_cliente FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE SET NULL;
+
 CREATE TABLE pedido (
     id INT AUTO_INCREMENT PRIMARY KEY,
     mesa INT NOT NULL,
     usuario_id INT,
+    cliente_id INT NULL,
     detalle TEXT,
     tipo_servicio ENUM('local','llevar') DEFAULT 'local',
     estado ENUM('pedido','cocinando','preparado','entregado','pagado') DEFAULT 'pedido',
     venta_id INT,
     fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
-    FOREIGN KEY (venta_id) REFERENCES venta(id)
+    FOREIGN KEY (venta_id) REFERENCES venta(id),
+    FOREIGN KEY (cliente_id) REFERENCES clientes(id)
 );
 
 CREATE TABLE venta_detalle (
@@ -232,6 +252,14 @@ CREATE TABLE puntos_fidelidad (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+-- FK puntos_fidelidad -> clientes
+ALTER TABLE puntos_fidelidad
+    ADD CONSTRAINT fk_puntos_cliente FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE SET NULL;
+
+-- FK propinas -> usuarios (cajero/registrador)
+ALTER TABLE propinas
+    ADD CONSTRAINT fk_propinas_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL;
 
 -- Datos de ejemplo
 INSERT INTO propinas (venta_id, monto, metodo_pago, usuario_id, referencia) VALUES

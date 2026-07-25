@@ -13,6 +13,11 @@ const selectedMesa = ref(null);
 const cajaConfig = ref({ nombre_comercial: '', ruc: '', direccion: '', telefono: '', yape_numero: '' });
 const tipoComprobante = ref('BOLETA'); // BOLETA, FACTURA
 
+// Propina digital (RF39)
+const propinaEnabled = ref(false);
+const propinaAmount = ref(0.00);
+const propinaMetodo = ref('Yape');
+
 // Configuración de Mesas (Físicas)
 const TOTAL_MESAS = 10; // Definimos 9 mesas por defecto
 const mesas = ref([]);
@@ -167,6 +172,21 @@ const procesarPagoSI = async (metodo) => {
           await api.post('/caja/recibo', { venta_id: ventaId, tipo: tipoComprobante.value });
         } catch (eRec) {
           console.error('Recibo error:', eRec);
+        }
+
+        // Registrar propina digital por separado si está activada (RF39)
+        try {
+          if (propinaEnabled.value && Number(propinaAmount.value) > 0) {
+            const usuarioId = Number(localStorage.getItem('userId')) || null;
+            await api.post('/propinas', {
+              venta_id: ventaId,
+              monto: Number(propinaAmount.value),
+              metodo_pago: propinaMetodo.value || 'Yape',
+              usuario_id: usuarioId
+            });
+          }
+        } catch (eProp) {
+          console.error('Error registrando propina:', eProp);
         }
 
         // 3. Actualizar estado de los pedidos a 'pagado' y vincular venta
@@ -395,6 +415,20 @@ onMounted(() => {
                                 <input type="radio" value="FACTURA" v-model="tipoComprobante"> Factura
                             </label>
                         </div>
+
+                        <!-- Propina digital (RF39) -->
+                        <div style="margin-bottom:12px; display:flex; gap:8px; align-items:center; justify-content:center;">
+                          <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                            <input type="checkbox" v-model="propinaEnabled"> Registrar propina digital
+                          </label>
+                          <input v-if="propinaEnabled" type="number" step="0.01" v-model.number="propinaAmount" placeholder="Monto propina" style="width:120px; padding:6px" />
+                          <select v-if="propinaEnabled" v-model="propinaMetodo" style="padding:6px">
+                            <option>Yape</option>
+                            <option>Tarjeta</option>
+                            <option>Efectivo</option>
+                          </select>
+                        </div>
+
                         <h4>Método de Pago</h4>
                         <div class="payment-grid">
                             <button @click="procesarPagoSI('Efectivo')" class="pay-btn cash">
